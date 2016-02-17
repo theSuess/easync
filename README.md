@@ -1,5 +1,4 @@
 # Easync
-===
 
 Simple HTTP File Sync API
 
@@ -10,7 +9,7 @@ Simple HTTP File Sync API
 
 ## Installation
 
-```
+```{.bash}
 git clone https://gitlab.com/theSuess/easync.git
 cd easync
 stack install
@@ -20,7 +19,7 @@ easync
 
 ## Usage
 
-```
+```{.bash}
 # Create a new User
 curl -i -X POST -H "Username:Rick" -H "Password:Sanchez" localhost:3000/user/create
 
