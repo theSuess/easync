@@ -1,0 +1,28 @@
+name:          easync
+version:       0.0.0
+cabal-version: >= 1.8
+build-type:    Simple
+category:      Web
+maintainer:    Dominik Süß
+synopsis:      Small file sync application
+description:      Small file sync application
+license:       MIT
+license-file:  LICENSE
+
+executable          easync
+    hs-source-dirs: .
+    main-is:        Main.hs
+    ghc-options:    -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
+    extensions:     OverloadedStrings
+    build-depends:  base   >= 4      && < 5
+                  , scotty >= 0.10.0 && < 0.11
+                  , transformers
+                  , filepath
+                  , hedis
+                  , wai-extra
+                  , bytestring
+                  , base16-bytestring
+                  , wai-app-static >= 3.1
+                  , text
+                  , cryptohash
+                  , bcrypt
