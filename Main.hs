@@ -14,15 +14,22 @@ import Data.ByteString.Base16
 import Crypto.BCrypt
 import qualified Database.Redis as R
 import Control.Exception
+import Config
 
 data Result = Valid | NoUser | NoPasswd | Invalid | Success | Duplicate deriving (Show, Eq)
 
 main :: IO ()
-main = scotty 3000 $ do
+main = do
+  cfg <- readConfig
+  let webPort = (appPort . app) cfg
+      redisPort = (dbPort . redis) cfg
+      redisHost = (host . redis) cfg
+      connInfo = R.defaultConnectInfo {R.connectHost = redisHost,R.connectPort = R.PortNumber (fromIntegral redisPort)}
+  scotty webPort $ do
   get "/" $ (html . mconcat) ["<h1>Welcome to easync</h1>"]
   get "/sync/:file" $ do
     (fn,user,passwd) <- getInfo
-    valid <- login user passwd
+    valid <- login connInfo user passwd
     case valid of
       Valid -> do
         fc <- liftIO (try $ B.readFile (generatePath (TL.unpack (fromJust user)) fn) :: IO (Either IOException B.ByteString))
@@ -36,7 +43,7 @@ main = scotty 3000 $ do
   post "/sync/:file" $ do
     fs <- files
     (fn,user,passwd) <- getInfo
-    valid <- login user passwd
+    valid <- login connInfo user passwd
     case valid of
       Valid -> uploadFile fs fn (TL.unpack (fromJust user))
       NoUser -> text "Please specify a User"
@@ -46,7 +53,7 @@ main = scotty 3000 $ do
   post "/user/create" $ do
     user <- header "User"
     passwd <- header "Password"
-    rstat <- createUser user passwd
+    rstat <- createUser connInfo user passwd
     case rstat of
       NoUser -> text "Please specify a User"
       NoPasswd -> text "Pleace specify your Password"
@@ -61,11 +68,11 @@ getInfo = do
   passwd <- header "Password"
   return (fn,user,passwd)
 
-login :: Maybe TL.Text -> Maybe TL.Text -> ActionM Result
-login Nothing _ = return NoUser
-login _ Nothing = return NoPasswd
-login (Just user) (Just passwd) = do
-  rConn <- liftIO (R.connect R.defaultConnectInfo)
+login :: R.ConnectInfo -> Maybe TL.Text -> Maybe TL.Text -> ActionM Result
+login _ Nothing _ = return NoUser
+login _ _ Nothing = return NoPasswd
+login c (Just user) (Just passwd) = do
+  rConn <- liftIO (R.connect c)
   pwd <- liftIO $ getPasswd rConn ((BS.pack . TL.unpack ) user)
   case pwd of
     Right (Just pwd') -> if validatePass passwd pwd' then
@@ -79,11 +86,11 @@ getPasswd conn u = R.runRedis conn $ R.get (mconcat ["easync:",u])
 setPasswd :: R.Connection -> BS.ByteString -> BS.ByteString -> IO (Either R.Reply R.Status)
 setPasswd conn u h = R.runRedis conn $ R.set (mconcat ["easync:",u]) h
 
-createUser :: Maybe TL.Text -> Maybe TL.Text -> ActionM Result
-createUser Nothing _ = return NoUser
-createUser _ Nothing = return NoPasswd
-createUser (Just user) (Just password) = do
-  rConn <- liftIO (R.connect R.defaultConnectInfo)
+createUser :: R.ConnectInfo -> Maybe TL.Text -> Maybe TL.Text -> ActionM Result
+createUser _ Nothing _ = return NoUser
+createUser _ _ Nothing = return NoPasswd
+createUser c (Just user) (Just password) = do
+  rConn <- liftIO (R.connect c)
   Right mh <- liftIO $ getPasswd rConn ((BS.pack . TL.unpack) user)
   case mh of
     Nothing -> do

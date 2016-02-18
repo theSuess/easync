@@ -20,6 +20,7 @@ executable          easync
                   , filepath
                   , hedis
                   , wai-extra
+                  , yaml
                   , bytestring
                   , base16-bytestring
                   , wai-app-static >= 3.1
