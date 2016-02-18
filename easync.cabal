@@ -10,7 +10,7 @@ license:       MIT
 license-file:  LICENSE
 
 executable          easync
-    hs-source-dirs: .
+    hs-source-dirs: src
     main-is:        Main.hs
     ghc-options:    -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
     extensions:     OverloadedStrings
