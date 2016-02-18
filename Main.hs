@@ -15,7 +15,7 @@ import Crypto.BCrypt
 import qualified Database.Redis as R
 import Control.Exception
 
-data LoginResult = Valid | NoUser | NoPasswd | Invalid | Success | Duplicate deriving (Show, Eq)
+data Result = Valid | NoUser | NoPasswd | Invalid | Success | Duplicate deriving (Show, Eq)
 
 main :: IO ()
 main = scotty 3000 $ do
@@ -54,9 +54,6 @@ main = scotty 3000 $ do
       Success -> text "Success"
       _ -> text "Internal Server Error"
 
-
-
-
 getInfo :: ActionM (String,Maybe TL.Text,Maybe TL.Text)
 getInfo = do
   fn <- param "file"
@@ -64,7 +61,7 @@ getInfo = do
   passwd <- header "Password"
   return (fn,user,passwd)
 
-login :: Maybe TL.Text -> Maybe TL.Text -> ActionM LoginResult
+login :: Maybe TL.Text -> Maybe TL.Text -> ActionM Result
 login Nothing _ = return NoUser
 login _ Nothing = return NoPasswd
 login (Just user) (Just passwd) = do
@@ -82,7 +79,7 @@ getPasswd conn u = R.runRedis conn $ R.get (mconcat ["easync:",u])
 setPasswd :: R.Connection -> BS.ByteString -> BS.ByteString -> IO (Either R.Reply R.Status)
 setPasswd conn u h = R.runRedis conn $ R.set (mconcat ["easync:",u]) h
 
-createUser :: Maybe TL.Text -> Maybe TL.Text -> ActionM LoginResult
+createUser :: Maybe TL.Text -> Maybe TL.Text -> ActionM Result
 createUser Nothing _ = return NoUser
 createUser _ Nothing = return NoPasswd
 createUser (Just user) (Just password) = do
