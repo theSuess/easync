@@ -20,6 +20,7 @@ executable          easync
                   , transformers
                   , filepath
                   , hedis
+                  , http-types
                   , wai-extra
                   , yaml
                   , bytestring

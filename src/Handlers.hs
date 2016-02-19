@@ -10,6 +10,7 @@ import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Text.Lazy as TL
 import Network.Wai.Parse
+import Network.HTTP.Types
 import qualified Crypto.Hash.SHA256 as SHA256 
 import Data.ByteString.Base16
 import Crypto.BCrypt
@@ -26,12 +27,14 @@ getFileHandler connInfo = do
     Valid -> do
       fc <- liftIO (try $ B.readFile (generatePath (TL.unpack (fromJust user)) fn) :: IO (Either IOException B.ByteString))
       case fc of
-        Left _ -> text "No such file"
+        Left _ -> do
+          status status404
+          text "No such file"
         Right f -> raw f
-    NoUser -> text "Please specify a User"
-    NoPasswd -> text "Pleace specify your Password"
-    Invalid -> text "Authentication Failiure"
-    _ -> text "Internal Server Error"
+    NoUser -> error400 "Please specify a User"
+    NoPasswd -> error400 "Pleace specify your Password"
+    Invalid -> error401
+    _ -> error500
 
 createFileHandler :: R.ConnectInfo -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
 createFileHandler connInfo = do
@@ -40,10 +43,10 @@ createFileHandler connInfo = do
   valid <- login connInfo user passwd
   case valid of
     Valid -> uploadFile fs fn (TL.unpack (fromJust user))
-    NoUser -> text "Please specify a User"
-    NoPasswd -> text "Pleace specify your Password"
-    Invalid -> text "Authentication Failiure"
-    _ -> text "Internal Server Error"
+    NoUser -> error400 "Please specify a User"
+    NoPasswd -> error400 "Pleace specify your Password"
+    Invalid -> error401
+    _ -> error500
 
 
 createUserHandler :: R.ConnectInfo -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
@@ -52,12 +55,26 @@ createUserHandler connInfo =  do
   passwd <- header "Password"
   rstat <- createUser connInfo user passwd
   case rstat of
-    NoUser -> text "Please specify a User"
-    NoPasswd -> text "Pleace specify your Password"
-    Duplicate -> text "This user allready exists"
+    NoUser -> error400 "Please specify a User"
+    NoPasswd -> error400 "Pleace specify your Password"
+    Duplicate -> error400 "This user allready exists"
     Success -> text "Success"
-    _ -> text "Internal Server Error"
+    _ -> error500
 
+error500 :: ActionT TL.Text IO()
+error500 = do
+  status status500
+  text "Internal Server Error"
+
+error400 :: TL.Text -> ActionT TL.Text IO ()
+error400 s = do
+  status status400
+  text s
+
+error401 :: ActionT TL.Text IO()
+error401 = do
+  status status401
+  text "Authentication Failiure"
 
 getInfo :: ActionM (String,Maybe TL.Text,Maybe TL.Text)
 getInfo = do
