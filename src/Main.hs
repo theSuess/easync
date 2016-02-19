@@ -3,6 +3,7 @@
 import Web.Scotty
 
 import qualified Database.Redis as R
+import System.Environment
 
 import Config
 import qualified Handlers as H
@@ -11,7 +12,9 @@ data Result = Valid | NoUser | NoPasswd | Invalid | Success | Duplicate deriving
 
 main :: IO ()
 main = do
-  cfg <- readConfig
+  args <- getArgs
+  let cfgFile = if null args then "" else head args
+  cfg <- readConfig cfgFile
   let webPort = (appPort . app) cfg
       redisPort = (dbPort . redis) cfg
       redisHost = (host . redis) cfg

@@ -31,6 +31,6 @@ instance FromJSON RedisConfig where
     m .: "port"
   parseJSON x = fail ("Not an object: " ++ show x)
 
-readConfig :: IO EasyncConfig
-readConfig =
-  either (error . show) id <$> decodeFileEither "./easync.yaml"
+readConfig :: String -> IO EasyncConfig
+readConfig s =
+  either (error . show) id <$> decodeFileEither (if null s then "./easync.yaml" else s)
