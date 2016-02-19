@@ -12,8 +12,9 @@ license-file:  LICENSE
 executable          easync
     hs-source-dirs: src
     main-is:        Main.hs
-    ghc-options:    -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
+    ghc-options:    -Wall -threaded -rtsopts -with-rtsopts=-N
     extensions:     OverloadedStrings
+    other-modules:  Config,Handlers
     build-depends:  base   >= 4      && < 5
                   , scotty >= 0.10.0 && < 0.11
                   , transformers
