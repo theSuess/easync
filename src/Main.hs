@@ -2,14 +2,13 @@
 
 import Web.Scotty
 
-import qualified Database.Redis as R
 import Network.Wai.Middleware.RequestLogger
 import System.Environment
+import qualified Database.Redis as R
 
 import Config
 import qualified Handlers as H
 
-data Result = Valid | NoUser | NoPasswd | Invalid | Success | Duplicate deriving (Show, Eq)
 
 main :: IO ()
 main = do

@@ -1,21 +1,20 @@
 module Handlers where
 
+import Control.Exception
+import Control.Monad.IO.Class
+import Crypto.BCrypt
+import Data.ByteString.Base16
+import Data.Maybe
+import Network.HTTP.Types
+import Network.Wai.Parse
+import System.FilePath ((</>))
 import Web.Scotty
 import Web.Scotty.Internal.Types
-import Control.Monad.IO.Class
-import Data.Maybe
-
-import System.FilePath ((</>))
-import qualified Data.ByteString.Lazy as B
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.Text.Lazy as TL
-import Network.Wai.Parse
-import Network.HTTP.Types
 import qualified Crypto.Hash.SHA256 as SHA256 
-import Data.ByteString.Base16
-import Crypto.BCrypt
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Lazy as B
+import qualified Data.Text.Lazy as TL
 import qualified Database.Redis as R
-import Control.Exception
 
 data Result = Valid | NoUser | NoPasswd | Invalid | Success | Duplicate deriving (Show, Eq)
 
