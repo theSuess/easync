@@ -13,9 +13,9 @@ import qualified Handlers as H
 main :: IO ()
 main = do
   args <- getArgs
-  let cfgFile = if null args then "" else head args
+  let cfgFile = if null args then "./easync.cfg" else head args
   cfg <- readConfig cfgFile
-  let webPort = (appPort . app) cfg
+  let webPort = port cfg
       redisPort = (dbPort . redis) cfg
       redisHost = (host . redis) cfg
       connInfo = R.defaultConnectInfo {R.connectHost = redisHost

@@ -1,36 +1,32 @@
 module Config where
 
-import Data.Yaml
+import qualified Data.Configurator as CFG
 
 data EasyncConfig = EasyncConfig
-  { app :: AppConfig
+  { port :: Int
   , redis :: RedisConfig
   } deriving (Show,Eq)
-
-data AppConfig = AppConfig { appPort :: Int } deriving (Show, Eq)
 
 data RedisConfig = RedisConfig
   { host :: String
   , dbPort :: Int
   } deriving (Show, Eq)
 
-instance FromJSON EasyncConfig where
-  parseJSON (Object m) = EasyncConfig <$>
-    m .: "app" <*>
-    m .: "redis"
-  parseJSON x = fail ("Not an object: " ++ show x)
 
-instance FromJSON AppConfig where
-  parseJSON (Object m) = AppConfig <$>
-    m .: "port"
-  parseJSON x = fail ("Not an object: " ++ show x)
+readConfig :: FilePath -> IO EasyncConfig
+readConfig config_filename = do
+  config <- CFG.load [ CFG.Required config_filename]
 
-instance FromJSON RedisConfig where
-  parseJSON (Object m) = RedisConfig <$>
-    m .: "host" <*>
-    m .: "port"
-  parseJSON x = fail ("Not an object: " ++ show x)
+  prt <- CFG.lookupDefault 3000 config "port"
+  dbhost <- CFG.require config "database.host"
+  dbport <- CFG.require config "database.port"
 
-readConfig :: String -> IO EasyncConfig
-readConfig s =
-  either (error . show) id <$> decodeFileEither (if null s then "./easync.yaml" else s)
+  return EasyncConfig
+    {
+      port = prt
+    , redis = RedisConfig
+        {
+          host = dbhost
+        , dbPort = dbport
+        }
+    }

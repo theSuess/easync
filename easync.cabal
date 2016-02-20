@@ -22,6 +22,7 @@ executable          easync
                   , hedis
                   , http-types
                   , wai-extra
+                  , configurator
                   , yaml
                   , bytestring
                   , base16-bytestring
