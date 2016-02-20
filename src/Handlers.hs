@@ -10,7 +10,7 @@ import Network.Wai.Parse
 import System.FilePath ((</>))
 import Web.Scotty
 import Web.Scotty.Internal.Types
-import qualified Crypto.Hash.SHA256 as SHA256 
+import qualified Crypto.Hash.SHA256 as SHA256
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Text.Lazy as TL
@@ -24,7 +24,7 @@ getFileHandler connInfo = do
   valid <- login connInfo user passwd
   case valid of
     Valid -> do
-      fc <- liftIO (try $ B.readFile (generatePath (TL.unpack (fromJust user)) fn) :: IO (Either IOException B.ByteString))
+      fc <- liftIO $ getFile (TL.unpack $ fromJust user) fn
       case fc of
         Left _ -> do
           status status404
@@ -34,6 +34,17 @@ getFileHandler connInfo = do
     NoPasswd -> error400 "Pleace specify your Password"
     Invalid -> error401
     _ -> error500
+
+
+getHashHandler :: Web.Scotty.Internal.Types.ActionT TL.Text IO ()
+getHashHandler = do
+  (fn,user,_) <- getInfo
+  fc <- liftIO $ getFile (TL.unpack $ fromJust user) fn
+  case fc of
+    Left _ -> do
+      status status404
+      text "No such file"
+    Right f -> text  $ TL.pack (hashSha256 $ (BS.unpack . B.toStrict) f)
 
 createFileHandler :: R.ConnectInfo -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
 createFileHandler connInfo = do
@@ -74,6 +85,10 @@ error401 :: ActionT TL.Text IO()
 error401 = do
   status status401
   text "Authentication Failiure"
+
+getFile :: String -> String -> IO (Either IOException B.ByteString)
+getFile user fn = try $ B.readFile (generatePath user fn)
+
 
 getInfo :: ActionM (String,Maybe TL.Text,Maybe TL.Text)
 getInfo = do

@@ -24,5 +24,6 @@ main = do
   middleware logStdoutDev
   get "/" $ (html . mconcat) ["<h1>Welcome to easync</h1>"]
   get "/sync/:file" (H.getFileHandler connInfo)
+  get "/hash/:file" H.getHashHandler
   post "/sync/:file" (H.createFileHandler connInfo)
   post "/user/create" (H.createUserHandler connInfo)
