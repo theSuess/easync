@@ -39,12 +39,14 @@ getFileHandler connInfo = do
 getHashHandler :: Web.Scotty.Internal.Types.ActionT TL.Text IO ()
 getHashHandler = do
   (fn,user,_) <- getInfo
-  fc <- liftIO $ getFile (TL.unpack $ fromJust user) fn
-  case fc of
-    Left _ -> do
-      status status404
-      text "No such file"
-    Right f -> text  $ TL.pack (hashSha256 $ (BS.unpack . B.toStrict) f)
+  if isNothing user then error400 "Please specify a User"
+    else do
+      fc <- liftIO $ getFile (TL.unpack $ fromJust user) fn
+      case fc of
+        Left _ -> do
+          status status404
+          text "No such file"
+        Right f -> text  $ TL.pack (hashSha256 $ (BS.unpack . B.toStrict) f)
 
 createFileHandler :: R.ConnectInfo -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
 createFileHandler connInfo = do
