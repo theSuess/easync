@@ -18,13 +18,13 @@ import qualified Database.Redis as R
 
 data Result = Valid | NoUser | NoPasswd | Invalid | Success | Duplicate deriving (Show, Eq)
 
-getFileHandler :: R.ConnectInfo -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
-getFileHandler connInfo = do
+getFileHandler :: R.ConnectInfo -> String -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
+getFileHandler connInfo dir = do
   (fn,user,passwd) <- getInfo
   valid <- login connInfo user passwd
   case valid of
     Valid -> do
-      fc <- liftIO $ getFile (TL.unpack $ fromJust user) fn
+      fc <- liftIO $ getFile (TL.unpack $ fromJust user) fn dir
       case fc of
         Left _ -> do
           status status404
@@ -36,25 +36,25 @@ getFileHandler connInfo = do
     _ -> error500
 
 
-getHashHandler :: Web.Scotty.Internal.Types.ActionT TL.Text IO ()
-getHashHandler = do
+getHashHandler :: String -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
+getHashHandler dir = do
   (fn,user,_) <- getInfo
   if isNothing user then error400 "Please specify a User"
     else do
-      fc <- liftIO $ getFile (TL.unpack $ fromJust user) fn
+      fc <- liftIO $ getFile (TL.unpack $ fromJust user) fn dir
       case fc of
         Left _ -> do
           status status404
           text "No such file"
         Right f -> text  $ TL.pack (hashSha256 $ (BS.unpack . B.toStrict) f)
 
-createFileHandler :: R.ConnectInfo -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
-createFileHandler connInfo = do
+createFileHandler :: R.ConnectInfo -> String -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
+createFileHandler connInfo dir = do
   fs <- files
   (fn,user,passwd) <- getInfo
   valid <- login connInfo user passwd
   case valid of
-    Valid -> uploadFile fs fn (TL.unpack (fromJust user))
+    Valid -> uploadFile fs (TL.unpack (fromJust user)) fn dir
     NoUser -> error400 "Please specify a User"
     NoPasswd -> error400 "Pleace specify your Password"
     Invalid -> error401
@@ -88,8 +88,8 @@ error401 = do
   status status401
   text "Authentication Failiure"
 
-getFile :: String -> String -> IO (Either IOException B.ByteString)
-getFile user fn = try $ B.readFile (generatePath user fn)
+getFile :: String -> String -> String -> IO (Either IOException B.ByteString)
+getFile user fn dir = try $ B.readFile (generatePath user fn dir)
 
 
 getInfo :: ActionM (String,Maybe TL.Text,Maybe TL.Text)
@@ -138,14 +138,14 @@ slowHash s = do
 validatePass :: TL.Text -> BS.ByteString -> Bool
 validatePass passwd hash = validatePassword hash ((BS.pack . TL.unpack) passwd)
 
-uploadFile :: MonadIO m => [(t,FileInfo B.ByteString)] -> String -> String -> m ()
-uploadFile fs fn u = do
+uploadFile :: MonadIO m => [(t,FileInfo B.ByteString)] -> String -> String -> String -> m ()
+uploadFile fs u fn dir= do
   let fs' = [ (fieldName, BS.unpack (fileName fi), fileContent fi) | (fieldName,fi) <- fs ]
   -- write the files to disk, so they will be served by the static middleware
-  liftIO $ sequence_ [ B.writeFile (generatePath u fn) fc | (_,_,fc) <- fs' ]
+  liftIO $ sequence_ [ B.writeFile (generatePath u fn dir) fc | (_,_,fc) <- fs' ]
 
-generatePath :: String -> String -> String
-generatePath u fn = "uploads" </> hashSha256 (hashSha256 fn ++ hashSha256 u)
+generatePath :: String -> String -> String -> String
+generatePath u fn dir = dir </> hashSha256 (hashSha256 fn ++ hashSha256 u)
 
 hashSha256 :: String -> String
 hashSha256 s = BS.unpack $ encode $ SHA256.hash $ BS.pack s
