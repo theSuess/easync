@@ -10,6 +10,7 @@ import Network.Wai.Parse
 import System.FilePath ((</>))
 import Web.Scotty
 import Web.Scotty.Internal.Types
+import System.Directory
 import qualified Crypto.Hash.SHA256 as SHA256
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as B
@@ -72,6 +73,16 @@ createUserHandler connInfo =  do
     Duplicate -> error400 "This user allready exists"
     Success -> text "Success"
     _ -> error500
+
+homeHandler :: String -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
+homeHandler dir = do
+  dirfiles <- liftIO $ getDirectoryContents dir
+  let filecount = length dirfiles
+  (html . mconcat) ["<h1> Welcome to easync </h1>"
+                    , "<h3> Status </h3>"
+                    , "<p> Currently there are ",TL.pack $ show filecount," files stored on this server</p>"
+                    , "<p> For more information visit <a href=\"https://gitlab.com/theSuess/easync\">gitlab.com/theSuess/easync</a></p>"
+                    ]
 
 error500 :: ActionT TL.Text IO()
 error500 = do

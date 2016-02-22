@@ -19,6 +19,7 @@ executable          easync
                   , scotty >= 0.10.0 && < 0.11
                   , transformers
                   , filepath
+                  , directory
                   , hedis
                   , http-types
                   , wai-extra
