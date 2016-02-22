@@ -41,4 +41,4 @@ main = getArgs >>= executeR Main {config = "", Main.port=Nothing,uploadDir = ""}
   get "/sync/:file" (H.getFileHandler connInfo dir)
   get "/hash/:file" (H.getHashHandler dir)
   post "/sync/:file" (H.createFileHandler connInfo dir)
-  post "/user/create" (H.createUserHandler connInfo)
+  post "/user/" (H.createUserHandler connInfo)
