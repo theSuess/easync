@@ -1,21 +1,34 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, MultiParamTypeClasses, DeriveDataTypeable #-}
 
 import Web.Scotty
 
 import Network.Wai.Middleware.RequestLogger
 import System.Environment
+import Data.Maybe
 import qualified Database.Redis as R
+import System.Console.CmdLib
 
 import Config
 import qualified Handlers as H
 
+data Main = Main { config :: String, port :: Maybe Int }
+    deriving (Typeable, Data, Eq)
+
+instance Attributes Main where
+    attributes _ = group "Options" [
+        config %> [ Help "Location of the Config file", ArgHelp "config.cfg"
+                    , Default ("easync.cfg" :: String) ],
+        Main.port    %> [Help "Override the Application port specified in the config", Default (Nothing :: Maybe Int)]
+        ]
+
+instance RecordCommand Main where
+    mode_summary _ = "Easync server"
+    run' _ _ = putStrLn "No specific commands are implemented yet"
 
 main :: IO ()
-main = do
-  args <- getArgs
-  let cfgFile = if null args then "./easync.cfg" else head args
-  cfg <- readConfig cfgFile
-  let webPort = port cfg
+main = getArgs >>= executeR Main {config = "", Main.port=Nothing} >>= \opts -> do
+  cfg <- readConfig $ config opts
+  let webPort = fromMaybe (Config.port cfg) (Main.port opts)
       redisPort = (dbPort . redis) cfg
       redisHost = (host . redis) cfg
       connInfo = R.defaultConnectInfo {R.connectHost = redisHost

@@ -23,7 +23,7 @@ executable          easync
                   , http-types
                   , wai-extra
                   , configurator
-                  , yaml
+                  , cmdlib
                   , bytestring
                   , base16-bytestring
                   , wai-app-static >= 3.1
