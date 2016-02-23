@@ -3,12 +3,12 @@ module Config where
 import qualified Data.Configurator as CFG
 
 data EasyncConfig = EasyncConfig
-  { port :: Int
+  { port  :: Int
   , redis :: RedisConfig
   } deriving (Show,Eq)
 
 data RedisConfig = RedisConfig
-  { host :: String
+  { host   :: String
   , dbPort :: Int
   } deriving (Show, Eq)
 

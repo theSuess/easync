@@ -1,18 +1,18 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances, MultiParamTypeClasses, DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 
-import Web.Scotty
-
-import Network.Wai.Middleware.RequestLogger
-import System.Environment
-import Data.Maybe
-import qualified Database.Redis as R
-import System.Console.CmdLib
-
-import Config
-import qualified Handlers as H
+import           Config
+import           Data.Maybe
+import qualified Database.Redis                       as R
+import qualified Handlers                             as H
+import           Network.Wai.Middleware.RequestLogger
+import           System.Console.CmdLib
+import           Web.Scotty
 
 data Main = Main { config :: String, port :: Maybe Int, uploadDir :: String}
-    deriving (Typeable, Data, Eq)
+  deriving (Typeable, Data, Eq)
 
 instance Attributes Main where
     attributes _ = group "Options" [
@@ -25,7 +25,6 @@ instance Attributes Main where
 instance RecordCommand Main where
     mode_summary _ = "Easync server"
     run' _ _ = putStrLn "No specific commands are implemented yet"
-
 main :: IO ()
 main = getArgs >>= executeR Main {config = "", Main.port=Nothing,uploadDir = ""} >>= \opts -> do
   cfg <- readConfig $ config opts
@@ -36,9 +35,9 @@ main = getArgs >>= executeR Main {config = "", Main.port=Nothing,uploadDir = ""}
       connInfo = R.defaultConnectInfo {R.connectHost = redisHost
                                       ,R.connectPort = R.PortNumber (fromIntegral redisPort)}
   scotty webPort $ do
-  middleware logStdoutDev
-  get "/" (H.homeHandler dir)
-  get "/sync/:file" (H.getFileHandler connInfo dir)
-  get "/hash/:file" (H.getHashHandler dir)
-  post "/sync/:file" (H.createFileHandler connInfo dir)
-  post "/user/" (H.createUserHandler connInfo)
+    middleware logStdoutDev
+    get "/" (H.homeHandler dir)
+    get "/sync/:file" (H.getFileHandler connInfo dir)
+    get "/hash/:file" (H.getHashHandler dir)
+    post "/sync/:file" (H.createFileHandler connInfo dir)
+    post "/user/" (H.createUserHandler connInfo)
