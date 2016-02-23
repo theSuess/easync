@@ -36,6 +36,22 @@ getFileHandler connInfo dir = do
     Invalid -> error401
     _ -> error500
 
+deleteFileHandler :: R.ConnectInfo -> String -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
+deleteFileHandler connInfo dir = do
+  (fn,user,passwd) <- getInfo
+  valid <- login connInfo user passwd
+  case valid of
+    Valid -> do
+      res <- liftIO $ removeIfExists (generatePath ((TL.unpack . fromJust) user) fn dir)
+      case res of
+        Success -> text "Deleted"
+        _ -> do
+          status status400
+          text "No such file"
+    NoUser -> error400 "Please specify a User"
+    NoPasswd -> error400 "Pleace specify your Password"
+    Invalid -> error401
+    _ -> error500
 
 getHashHandler :: String -> Web.Scotty.Internal.Types.ActionT TL.Text IO ()
 getHashHandler dir = do
@@ -154,6 +170,14 @@ uploadFile fs u fn dir= do
   let fs' = [ (fieldName, BS.unpack (fileName fi), fileContent fi) | (fieldName,fi) <- fs ]
   -- write the files to disk, so they will be served by the static middleware
   liftIO $ sequence_ [ B.writeFile (generatePath u fn dir) fc | (_,_,fc) <- fs' ]
+
+removeIfExists :: FilePath -> IO Result
+removeIfExists fn = do
+  fileExists <- doesFileExist fn
+  if fileExists then do
+    removeFile fn
+    return Success
+    else return Invalid
 
 generatePath :: String -> String -> String -> String
 generatePath u fn dir = dir </> hashSha256 (hashSha256 fn ++ hashSha256 u)
